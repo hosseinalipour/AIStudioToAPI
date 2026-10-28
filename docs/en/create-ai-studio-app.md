@@ -35,7 +35,7 @@ In the AI Studio App root directory, copy the complete contents of these files f
 
 Keep the other blank-template files, including `vite.config.ts`, `tsconfig.json`, `index.css`, `.gitignore`, `.env.local`, and `README.md`.
 
-## 4. Configure metadata.json and the API key
+## 4. Configure metadata.json
 
 Open the App's existing `metadata.json` and replace the empty `majorCapabilities` array with:
 
@@ -54,11 +54,17 @@ Keep your App name, description, and `requestFramePermissions`. The complete fil
 }
 ```
 
-In AI Studio's **Settings → Secrets**, confirm that a valid `GEMINI_API_KEY` is configured. The App reads the key from the server-side environment; keep the key in Secrets.
+## 5. Set the API key
+
+Click **Settings** in the upper-right corner, then click **Secrets**. Find `GEMINI_API_KEY` and use the **Value** dropdown to select or change the key as needed. The App reads the key from the server-side environment; keep the key in Secrets.
+
+![Select or change GEMINI_API_KEY under Settings and Secrets](../assets/ai-studio-app/04-secrets.png)
+
+> **Everyone using this App shares its configured `GEMINI_API_KEY`, and calls count toward the quota of the project that owns the key.** Switching the Google account accessing the App or running multiple local AIStudioToAPI instances does not separate this quota. See the [official AI Studio guide (English)](https://ai.google.dev/gemini-api/docs/aistudio-build-mode?hl=en#api-key-exposed).
 
 Save every file and restart the App, then continue with access permissions and the App link.
 
-## 5. Set access permissions and copy the link
+## 6. Set access permissions and copy the link
 
 Click **Share** in the upper-right corner and ensure that the Google account running AIStudioToAPI has access to the App.
 
@@ -75,9 +81,7 @@ If the accounts already have access, keep the existing permissions and copy the 
 https://ai.studio/apps/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-> Shared-App calls count toward the usage limits of the key configured for the App. Check the access scope before sharing publicly. See the [official AI Studio guide](https://ai.google.dev/gemini-api/docs/aistudio-build-mode).
-
-## 6. Configure AIStudioToAPI and verify
+## 7. Configure AIStudioToAPI and verify
 
 Return to the project running AIStudioToAPI and set the environment variable to the complete link you copied:
 

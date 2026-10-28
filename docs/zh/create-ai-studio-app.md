@@ -35,7 +35,7 @@
 
 保留空白模板中的其他文件，包括 `vite.config.ts`、`tsconfig.json`、`index.css`、`.gitignore`、`.env.local` 和 `README.md`。
 
-## 4. 配置 metadata.json 和 API Key
+## 4. 配置 metadata.json
 
 打开 App 中已有的 `metadata.json`，将 `majorCapabilities` 的空数组改为：
 
@@ -54,11 +54,17 @@
 }
 ```
 
-在 AI Studio 的 **Settings → Secrets** 中确认已配置有效的 `GEMINI_API_KEY`。应用从服务端环境变量读取 Key，请将 Key 保存在 Secrets 中。
+## 5. 设置 API Key
+
+点击页面右上角的 **Settings（设置）**，然后点击 **Secrets（密钥）**。找到 `GEMINI_API_KEY`，根据需要在 **Value** 下拉框中选择或更换 Key。应用从服务端环境变量读取 Key，请将 Key 保存在 Secrets 中。
+
+![在 Settings 的 Secrets 中选择或更换 GEMINI_API_KEY](../assets/ai-studio-app/04-secrets.png)
+
+> **所有使用这个 App 的用户都共用 App 配置的 `GEMINI_API_KEY`，调用会计入该 Key 所属项目的额度。** 切换访问 App 的 Google 账号或多开本地 AIStudioToAPI 实例不会分离这份额度。详见 [AI Studio 官方说明（中文）](https://ai.google.dev/gemini-api/docs/aistudio-build-mode?hl=zh-cn#api-key-exposed)。
 
 保存所有文件并重启应用，然后继续配置访问权限和应用链接。
 
-## 5. 设置访问权限并复制链接
+## 6. 设置访问权限并复制链接
 
 点击页面右上角的 **Share**，确保运行 AIStudioToAPI 的 Google 账号有权访问该 App。
 
@@ -75,9 +81,7 @@
 https://ai.studio/apps/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-> 共享应用的调用会计入应用所配置 Key 的使用额度。公开分享前请确认访问范围，详见 [AI Studio 官方说明](https://ai.google.dev/gemini-api/docs/aistudio-build-mode)。
-
-## 6. 配置 AIStudioToAPI 并验证
+## 7. 配置 AIStudioToAPI 并验证
 
 回到运行 AIStudioToAPI 的项目，将复制的完整链接填入环境变量：
 
