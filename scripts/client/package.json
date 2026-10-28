@@ -10,11 +10,10 @@
         "preview": "node server.mjs --preview"
     },
     "dependencies": {
-        "express": "^4.21.2"
+        "vite": "^6.2.0"
     },
     "devDependencies": {
         "@types/node": "^22.14.0",
-        "typescript": "~5.8.2",
-        "vite": "^6.2.0"
+        "typescript": "~5.8.2"
     }
 }

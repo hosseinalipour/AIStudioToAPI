@@ -1,82 +1,94 @@
-# 新建 AI Studio App 教程
+# 从空白创建 AI Studio App
 
-本教程用于创建项目专用的 AI Studio App，并获取 `AI_STUDIO_APP_URL` 环境变量所需的应用链接。
-
-项目不提供默认 App，必须配置你自己创建的应用。
+本教程用于创建供 AIStudioToAPI 使用的 AI Studio App，并获取 `AI_STUDIO_APP_URL` 所需的应用链接。每个部署都需要配置自己创建的 App。
 
 ## 1. 打开空白 App
 
 登录 Google 账号后，访问 [AI Studio 空白 App](https://aistudio.google.com/apps/bundled/blank)。
 
-页面打开后，点击右上角的 **Remix**。不要点击左下角输入框旁的 Remix 按钮。
+点击页面右上角的 **Remix**。
 
 ![点击页面右上角的 Remix](../assets/ai-studio-app/01-remix.png)
 
 ## 2. 创建自己的副本
 
-在弹窗中修改 **App name**，也可以按需修改 **Description**，然后点击右下角的 **Remix app**。
+在弹窗中填写 **App name**，按需修改 **Description**，然后点击右下角的 **Remix app**。
 
 ![填写名称并点击 Remix app](../assets/ai-studio-app/02-remix-dialog.png)
 
-等待应用副本创建完成。顶部出现你设置的应用名称后，点击预览区上方的 **Code**，进入代码编辑器。
+等待副本创建完成。顶部出现应用名称后，点击预览区上方的 **Code**，进入代码编辑器。
 
 ![点击 Code 进入代码编辑器](../assets/ai-studio-app/03-code.png)
 
-## 3. 替换代码文件
+## 3. 复制四个文件
 
-在代码编辑器中，用以下仓库文件替换对应文件的全部内容；应用中没有的文件需要新建：
+在 AI Studio App 根目录中，按下表复制仓库当前版本的完整文件内容：
 
-| 仓库文件                                                               | App 中的文件     |
-| ---------------------------------------------------------------------- | ---------------- |
-| [`scripts/client/build.js`](../../scripts/client/build.js)             | `index.ts`       |
-| [`scripts/client/index.html`](../../scripts/client/index.html)         | `index.html`     |
-| [`scripts/client/server.mjs`](../../scripts/client/server.mjs)         | `server.mjs`     |
-| [`scripts/client/package.json`](../../scripts/client/package.json)     | `package.json`   |
-| [`scripts/client/metadata.json`](../../scripts/client/metadata.json)   | `metadata.json`  |
-| [`scripts/client/vite.config.ts`](../../scripts/client/vite.config.ts) | `vite.config.ts` |
+| 仓库文件                                                           | App 中的文件   | 操作               |
+| ------------------------------------------------------------------ | -------------- | ------------------ |
+| [`scripts/client/build.js`](../../scripts/client/build.js)         | `index.ts`     | 替换全部内容       |
+| [`scripts/client/index.html`](../../scripts/client/index.html)     | `index.html`   | 替换全部内容       |
+| [`scripts/client/server.mjs`](../../scripts/client/server.mjs)     | `server.mjs`   | 新建并复制全部内容 |
+| [`scripts/client/package.json`](../../scripts/client/package.json) | `package.json` | 替换全部内容       |
 
-如果 App 中还有旧的 `vite.config.js` 或 `vite.config.mjs`，删除旧配置，只保留上表中的 `vite.config.ts`。`package.json` 中的启动命令必须运行 `server.mjs`，`metadata.json` 中的服务端 Gemini 能力声明也需要保留。
+`server.mjs` 负责启动页面服务和 Gemini 请求转发，`package.json` 提供对应的启动命令和依赖。
 
-完成后，点击编辑器下方的 **Save**；也可以按 `Ctrl+S`（macOS 使用 `Command+S`）保存。
+保留空白模板中的其他文件，包括 `vite.config.ts`、`tsconfig.json`、`index.css`、`.gitignore`、`.env.local` 和 `README.md`。
 
-> 请直接复制当前版本仓库中的文件。项目升级且上表中的文件发生变化后，需要回到 App 中重新替换并保存。
+## 4. 配置 metadata.json 和 API Key
 
-## 4. 检查预览
+打开 App 中已有的 `metadata.json`，将 `majorCapabilities` 的空数组改为：
 
-点击预览区上方的 **Preview**，等待大约 10 秒。如果出现以下错误，说明客户端代码已经正常运行并正在等待本项目建立连接，这是预期现象：
-
-```text
-Error: ❌ Failed to get authIndex: authIndex postMessage timeout (10s)
+```json
+["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 ```
 
-![Preview 中出现预期的超时提示](../assets/ai-studio-app/04-preview-error.png)
+保留自己的应用名称、描述和 `requestFramePermissions`。完整文件应类似下面的格式，最后一个字段后不要加逗号：
 
-AI Studio 左侧或底部可能同时显示代码错误数量。不要点击 **Fix** 让 AI 自动改写代码；只要预览出现上面的 `authIndex postMessage timeout (10s)` 即可继续。
+```json
+{
+  "name": "My AIStudioToAPI",
+  "description": "My AI Studio app for AIStudioToAPI",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+```
 
-## 5. 公开分享并复制链接
+在 AI Studio 的 **Settings → Secrets** 中确认已配置有效的 `GEMINI_API_KEY`。应用从服务端环境变量读取 Key，请将 Key 保存在 Secrets 中。
 
-1. 点击页面右上角的 **Share**，无需点击 **Publish**。
-2. 在 **General access** 中选择 **Public: Anyone with the link can view**。
-3. 点击分享面板底部的 **Copy link**。
+保存所有文件并重启应用，然后继续配置访问权限和应用链接。
+
+## 5. 设置访问权限并复制链接
+
+点击页面右上角的 **Share**，确保运行 AIStudioToAPI 的 Google 账号有权访问该 App。
+
+需要让多个账号通过公开链接访问时：
+
+1. 在 **General access** 中选择 **Public: Anyone with the link can view**。
+2. 点击分享面板底部的 **Copy link**。
 
 ![将访问范围设为 Public 并复制链接](../assets/ai-studio-app/05-share.png)
 
-复制到的链接应类似：
+如果使用账号已经有访问权限，可以保留现有权限设置，直接复制应用链接。链接格式应类似：
 
 ```text
 https://ai.studio/apps/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-## 6. 配置环境变量
+> 共享应用的调用会计入应用所配置 Key 的使用额度。公开分享前请确认访问范围，详见 [AI Studio 官方说明](https://ai.google.dev/gemini-api/docs/aistudio-build-mode)。
 
-将完整链接写入项目根目录的 `.env`：
+## 6. 配置 AIStudioToAPI 并验证
+
+回到运行 AIStudioToAPI 的项目，将复制的完整链接填入环境变量：
 
 ```env
 AI_STUDIO_APP_URL=https://ai.studio/apps/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-保存 `.env` 后重启 AIStudioToAPI。启动日志中的 `AI Studio App URL` 应显示你刚配置的地址。
+- 使用 `npm start` 时，写入项目根目录的 `.env`。
+- 使用 `npm run dev` 时，写入项目根目录的 `.env.development`。
+- 使用 Docker 时，设置容器的同名环境变量。
 
-该配置为空或格式无效时，程序会停止启动，不会回退到其他应用。
+保存后重启 AIStudioToAPI，确认启动日志中的 `AI Studio App URL` 显示你的应用地址。
 
-> 该 App 必须保持 Public；否则运行 AIStudioToAPI 的 Google 账号可能无法打开它。公开链接也意味着任何获得链接的人都可以查看 App，请不要在 `index.ts` 或 `index.html` 中加入密钥、Cookie 或其他敏感信息。
+最后，通过 API 客户端发送一次请求，确认能够收到并正常解析模型回复，创建流程即完成。
