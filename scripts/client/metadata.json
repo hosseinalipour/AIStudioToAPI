@@ -1,0 +1,6 @@
+{
+    "description": "https://github.com/iBUHub/AIStudioToAPI",
+    "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"],
+    "name": "AIStudioToAPI-V1.4.2",
+    "requestFramePermissions": []
+}

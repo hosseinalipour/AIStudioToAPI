@@ -39,9 +39,9 @@
 
    > 💡 **提示：** 如果下载 Camoufox 浏览器失败或等待太久，可以自行点击 [此处](https://github.com/daijro/camoufox/releases/tag/v135.0.1-beta.24) 下载，然后设置环境变量 `CAMOUFOX_EXECUTABLE_PATH` 为可执行文件的路径（支持绝对和相对路径）。
 
-3. 配置环境变量（可选）：
+3. 创建自己的 AI Studio App 并配置环境变量：
 
-   复制根目录下的 `.env.example` 为 `.env`，并在 `.env` 中按需修改配置（如端口、API 密钥等）。
+   按[教程](docs/zh/create-ai-studio-app.md)创建自己的 App，复制根目录下的 `.env.example` 为 `.env`，将应用链接填入 `AI_STUDIO_APP_URL`。该配置必填，项目不提供默认应用。
 
 4. 启动服务：
 
@@ -74,6 +74,8 @@
 
 使用 Docker 部署，无需预先提取身份验证凭据。
 
+部署前请按[教程](docs/zh/create-ai-studio-app.md)创建自己的 App，并将以下示例中的 `<应用-ID>` 替换为你的应用 ID。
+
 #### 🚢 步骤 1：部署容器
 
 ##### 🎮️ 方式 1：Docker 命令
@@ -85,6 +87,7 @@ docker run -d \
   -v /path/to/auth:/app/configs/auth \
   -v /path/to/data:/app/data \
   -e API_KEYS=your-api-key-1,your-api-key-2 \
+  -e AI_STUDIO_APP_URL="https://ai.studio/apps/<应用-ID>" \
   -e TZ=Asia/Shanghai \
   --restart unless-stopped \
   ghcr.io/ibuhub/aistudio-to-api:latest
@@ -98,6 +101,7 @@ docker run -d \
 - `-v /path/to/auth:/app/configs/auth`：挂载包含认证文件的目录
 - `-v /path/to/data:/app/data`：挂载统计数据持久化目录（`/app/data/usage-stats.jsonl`）
 - `-e API_KEYS`：用于身份验证的 API 密钥列表（使用逗号分隔）
+- `-e AI_STUDIO_APP_URL`：必填，你自己创建的 AI Studio 应用地址
 - `-e TZ=Asia/Shanghai`：时区设置（可选，默认使用系统时区）
 
 ##### 📦 方式 2：Docker Compose
@@ -123,6 +127,8 @@ services:
     environment:
       # 用于身份验证的 API 密钥列表（使用逗号分隔）
       API_KEYS: your-api-key-1,your-api-key-2
+      # 必填，使用自己的 AI Studio 应用
+      AI_STUDIO_APP_URL: https://ai.studio/apps/<应用-ID>
       # 时区设置（可选，默认使用系统时区）
       TZ: Asia/Shanghai
 ```
@@ -148,6 +154,7 @@ services:
      -v /path/to/auth:/app/configs/auth \
      -v /path/to/data:/app/data \
      -e API_KEYS=your-api-key-1,your-api-key-2 \
+     -e AI_STUDIO_APP_URL="https://ai.studio/apps/<应用-ID>" \
      -e TZ=Asia/Shanghai \
      --restart unless-stopped \
      aistudio-to-api
@@ -259,7 +266,7 @@ services:
 | `FAILURE_THRESHOLD`             | 切换帐户前允许的连续失败次数（设为 `0` 禁用）。                                                                                                                     | `3`       |
 | `IMMEDIATE_SWITCH_STATUS_CODES` | 触发立即切换帐户的 HTTP 状态码（逗号分隔，设为空值以禁用）。                                                                                                        | `429,503` |
 | `MAX_CONTEXTS`                  | 最大同时登录的账号数量。同时登录的账号切换更快，无需重新登录。数值越大内存消耗越高（约：1 个账号 ~700MB，2 个账号 ~950MB，3 个账号 ~1100MB）。设为 `0` 表示无限制。 | `1`       |
-| `AI_STUDIO_APP_URL`             | 要打开的 AI Studio 应用地址（可选），格式为 `https://ai.studio/apps/<应用 ID>`；留空时使用内置应用。[教程](docs/zh/create-ai-studio-app.md)                         | 内置应用  |
+| `AI_STUDIO_APP_URL`             | 必填，设置为你自己创建的 AI Studio 应用地址，格式为 `https://ai.studio/apps/<应用 ID>`；留空或无效时停止启动。[教程](docs/zh/create-ai-studio-app.md)               | 无        |
 | `HTTP_PROXY`                    | 用于访问 Google 服务的 HTTP 代理地址。                                                                                                                              | 无        |
 | `HTTPS_PROXY`                   | 用于访问 Google 服务的 HTTPS 代理地址。                                                                                                                             | 无        |
 | `NO_PROXY`                      | 不经过代理的地址列表（逗号分隔）。项目已内置自动绕过本地地址（localhost, 127.0.0.1, ::, ::1, 0.0.0.0），通常无需手动配置本地绕过。                                  | 无        |

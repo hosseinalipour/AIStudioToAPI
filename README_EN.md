@@ -39,9 +39,9 @@ A tool that wraps the Google AI Studio Build App web interface to provide OpenAI
 
    > 💡 **Tip:** If downloading the Camoufox browser fails or takes too long, you can manually download it from [here](https://github.com/daijro/camoufox/releases/tag/v135.0.1-beta.24), and set the environment variable `CAMOUFOX_EXECUTABLE_PATH` to the path of the browser executable (both absolute and relative paths are supported).
 
-3. Configure Environment Variables (Optional):
+3. Create Your AI Studio App and Configure Environment Variables:
 
-   Copy `.env.example` in the root directory to `.env`, and modify settings in `.env` as needed (e.g., port, API Key).
+   Create your own App using the [guide](docs/en/create-ai-studio-app.md), copy `.env.example` to `.env`, and set `AI_STUDIO_APP_URL` to your app link. This setting is required; no default app is provided.
 
 4. Start the service:
 
@@ -74,6 +74,8 @@ A tool that wraps the Google AI Studio Build App web interface to provide OpenAI
 
 Deploy using Docker without pre-extracting authentication credentials.
 
+Before deploying, create your own App using the [guide](docs/en/create-ai-studio-app.md), then replace `<app-id>` in the examples below with your app ID.
+
 #### 🚢 Step 1: Deploy Container
 
 ##### 🎮️ Option 1: Docker Command
@@ -85,6 +87,7 @@ docker run -d \
   -v /path/to/auth:/app/configs/auth \
   -v /path/to/data:/app/data \
   -e API_KEYS=your-api-key-1,your-api-key-2 \
+  -e AI_STUDIO_APP_URL="https://ai.studio/apps/<app-id>" \
   -e TZ=America/New_York \
   --restart unless-stopped \
   ghcr.io/ibuhub/aistudio-to-api:latest
@@ -98,6 +101,7 @@ Parameters:
 - `-v /path/to/auth:/app/configs/auth`: Mount directory containing auth files
 - `-v /path/to/data:/app/data`: Mount persistent data directory for usage statistics (`/app/data/usage-stats.jsonl`)
 - `-e API_KEYS`: Comma-separated list of API keys for authentication
+- `-e AI_STUDIO_APP_URL`: Required; the URL of your own AI Studio app
 - `-e TZ=America/New_York`: Timezone for logs (optional, defaults to system timezone)
 
 ##### 📦 Option 2: Docker Compose
@@ -123,6 +127,8 @@ services:
     environment:
       # Comma-separated list of API keys for authentication
       API_KEYS: your-api-key-1,your-api-key-2
+      # Required: use your own AI Studio app
+      AI_STUDIO_APP_URL: https://ai.studio/apps/<app-id>
       # Timezone setting (optional, defaults to system timezone)
       TZ: America/New_York
 ```
@@ -146,6 +152,7 @@ If you prefer to build the Docker image yourself, you can use the following comm
      -v /path/to/auth:/app/configs/auth \
      -v /path/to/data:/app/data \
      -e API_KEYS=your-api-key-1,your-api-key-2 \
+     -e AI_STUDIO_APP_URL="https://ai.studio/apps/<app-id>" \
      -e TZ=America/New_York \
      --restart unless-stopped \
      aistudio-to-api
@@ -245,22 +252,22 @@ Usage:
 
 #### 🌐 Proxy Configuration
 
-| Variable                        | Description                                                                                                                                                                                                                                                           | Default      |
-| :------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- |
-| `INITIAL_AUTH_INDEX`            | Initial authentication index to use on startup.                                                                                                                                                                                                                       | `0`          |
-| `ENABLE_AUTH_UPDATE`            | Whether to enable automatic auth credential updates. Defaults to enabled. The auth file will be automatically updated upon successful login/account switch and every 24 hours. Set to `false` to disable.                                                             | `true`       |
-| `MAX_RETRIES`                   | Maximum number of retries for failed requests (only effective for fake streaming and non-streaming).                                                                                                                                                                  | `3`          |
-| `RETRY_DELAY`                   | Delay between retries in milliseconds.                                                                                                                                                                                                                                | `2000`       |
-| `STREAM_TIMEOUT_MS`             | Timeout between real streaming chunks, in milliseconds. Maximum: `300000`.                                                                                                                                                                                            | `60000`      |
-| `FAKE_STREAM_TIMEOUT_MS`        | Timeout for fake streaming / non-streaming buffered responses, in milliseconds. Maximum: `300000`.                                                                                                                                                                    | `300000`     |
-| `SWITCH_ON_USES`                | Number of requests before automatically switching accounts (`0` to disable).                                                                                                                                                                                          | `40`         |
-| `FAILURE_THRESHOLD`             | Number of consecutive failures before switching accounts (`0` to disable).                                                                                                                                                                                            | `3`          |
-| `IMMEDIATE_SWITCH_STATUS_CODES` | HTTP status codes that trigger immediate account switching (comma-separated, set to empty to disable).                                                                                                                                                                | `429,503`    |
-| `MAX_CONTEXTS`                  | Maximum number of accounts that can be logged in simultaneously. Accounts logged in simultaneously can switch faster without re-login. Higher values consume more memory (approx: 1 account ~700MB, 2 accounts ~950MB, 3 accounts ~1100MB). Set to `0` for unlimited. | `1`          |
-| `AI_STUDIO_APP_URL`             | AI Studio app URL to open (optional), in the format `https://ai.studio/apps/<app-id>`. Leave empty to use the built-in app. [Guide](docs/en/create-ai-studio-app.md)                                                                                                  | Built-in app |
-| `HTTP_PROXY`                    | HTTP proxy address for accessing Google services.                                                                                                                                                                                                                     | None         |
-| `HTTPS_PROXY`                   | HTTPS proxy address for accessing Google services.                                                                                                                                                                                                                    | None         |
-| `NO_PROXY`                      | Comma-separated list of addresses to bypass the proxy. The project automatically bypasses local addresses (localhost, 127.0.0.1, ::, ::1 and 0.0.0.0), so manual local bypass configuration is usually not required.                                                  | None         |
+| Variable                        | Description                                                                                                                                                                                                                                                           | Default   |
+| :------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------- |
+| `INITIAL_AUTH_INDEX`            | Initial authentication index to use on startup.                                                                                                                                                                                                                       | `0`       |
+| `ENABLE_AUTH_UPDATE`            | Whether to enable automatic auth credential updates. Defaults to enabled. The auth file will be automatically updated upon successful login/account switch and every 24 hours. Set to `false` to disable.                                                             | `true`    |
+| `MAX_RETRIES`                   | Maximum number of retries for failed requests (only effective for fake streaming and non-streaming).                                                                                                                                                                  | `3`       |
+| `RETRY_DELAY`                   | Delay between retries in milliseconds.                                                                                                                                                                                                                                | `2000`    |
+| `STREAM_TIMEOUT_MS`             | Timeout between real streaming chunks, in milliseconds. Maximum: `300000`.                                                                                                                                                                                            | `60000`   |
+| `FAKE_STREAM_TIMEOUT_MS`        | Timeout for fake streaming / non-streaming buffered responses, in milliseconds. Maximum: `300000`.                                                                                                                                                                    | `300000`  |
+| `SWITCH_ON_USES`                | Number of requests before automatically switching accounts (`0` to disable).                                                                                                                                                                                          | `40`      |
+| `FAILURE_THRESHOLD`             | Number of consecutive failures before switching accounts (`0` to disable).                                                                                                                                                                                            | `3`       |
+| `IMMEDIATE_SWITCH_STATUS_CODES` | HTTP status codes that trigger immediate account switching (comma-separated, set to empty to disable).                                                                                                                                                                | `429,503` |
+| `MAX_CONTEXTS`                  | Maximum number of accounts that can be logged in simultaneously. Accounts logged in simultaneously can switch faster without re-login. Higher values consume more memory (approx: 1 account ~700MB, 2 accounts ~950MB, 3 accounts ~1100MB). Set to `0` for unlimited. | `1`       |
+| `AI_STUDIO_APP_URL`             | Required. Set your own AI Studio app URL in the format `https://ai.studio/apps/<app-id>`. Startup stops if it is empty or invalid. [Guide](docs/en/create-ai-studio-app.md)                                                                                           | None      |
+| `HTTP_PROXY`                    | HTTP proxy address for accessing Google services.                                                                                                                                                                                                                     | None      |
+| `HTTPS_PROXY`                   | HTTPS proxy address for accessing Google services.                                                                                                                                                                                                                    | None      |
+| `NO_PROXY`                      | Comma-separated list of addresses to bypass the proxy. The project automatically bypasses local addresses (localhost, 127.0.0.1, ::, ::1 and 0.0.0.0), so manual local bypass configuration is usually not required.                                                  | None      |
 
 #### 🗒️ Other Configuration
 

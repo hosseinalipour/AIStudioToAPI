@@ -2,6 +2,8 @@
 
 本教程用于创建项目专用的 AI Studio App，并获取 `AI_STUDIO_APP_URL` 环境变量所需的应用链接。
 
+项目不提供默认 App，必须配置你自己创建的应用。
+
 ## 1. 打开空白 App
 
 登录 Google 账号后，访问 [AI Studio 空白 App](https://aistudio.google.com/apps/bundled/blank)。
@@ -22,14 +24,22 @@
 
 ## 3. 替换代码文件
 
-在代码编辑器中依次替换以下文件的全部内容：
+在代码编辑器中，用以下仓库文件替换对应文件的全部内容；应用中没有的文件需要新建：
 
-1. 打开 AI Studio App 中的 `index.ts`，删除原有内容，然后复制本项目 [`scripts/client/build.js`](../../scripts/client/build.js) 的全部内容并粘贴进去。
-2. 打开 AI Studio App 中的 `index.html`，删除原有内容，然后复制本项目 [`scripts/client/index.html`](../../scripts/client/index.html) 的全部内容并粘贴进去。
+| 仓库文件                                                               | App 中的文件     |
+| ---------------------------------------------------------------------- | ---------------- |
+| [`scripts/client/build.js`](../../scripts/client/build.js)             | `index.ts`       |
+| [`scripts/client/index.html`](../../scripts/client/index.html)         | `index.html`     |
+| [`scripts/client/server.mjs`](../../scripts/client/server.mjs)         | `server.mjs`     |
+| [`scripts/client/package.json`](../../scripts/client/package.json)     | `package.json`   |
+| [`scripts/client/metadata.json`](../../scripts/client/metadata.json)   | `metadata.json`  |
+| [`scripts/client/vite.config.ts`](../../scripts/client/vite.config.ts) | `vite.config.ts` |
+
+如果 App 中还有旧的 `vite.config.js` 或 `vite.config.mjs`，删除旧配置，只保留上表中的 `vite.config.ts`。`package.json` 中的启动命令必须运行 `server.mjs`，`metadata.json` 中的服务端 Gemini 能力声明也需要保留。
 
 完成后，点击编辑器下方的 **Save**；也可以按 `Ctrl+S`（macOS 使用 `Command+S`）保存。
 
-> 请直接复制当前版本仓库中的文件。项目升级且这两个文件发生变化后，需要回到 App 中重新替换并保存。
+> 请直接复制当前版本仓库中的文件。项目升级且上表中的文件发生变化后，需要回到 App 中重新替换并保存。
 
 ## 4. 检查预览
 
@@ -66,5 +76,7 @@ AI_STUDIO_APP_URL=https://ai.studio/apps/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 保存 `.env` 后重启 AIStudioToAPI。启动日志中的 `AI Studio App URL` 应显示你刚配置的地址。
+
+该配置为空或格式无效时，程序会停止启动，不会回退到其他应用。
 
 > 该 App 必须保持 Public；否则运行 AIStudioToAPI 的 Google 账号可能无法打开它。公开链接也意味着任何获得链接的人都可以查看 App，请不要在 `index.ts` 或 `index.html` 中加入密钥、Cookie 或其他敏感信息。

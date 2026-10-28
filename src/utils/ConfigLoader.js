@@ -9,8 +9,6 @@ const fs = require("fs");
 const path = require("path");
 const { getProxySummaryFromEnv } = require("./ProxyUtils");
 
-const DEFAULT_AI_STUDIO_APP_URL = "https://ai.studio/apps/56128c84-c8e6-4d52-bf94-934c836720d9";
-
 function parseAiStudioAppUrl(value) {
     const rawValue = String(value || "").trim();
     if (!rawValue) return null;
@@ -46,8 +44,17 @@ class ConfigLoader {
     }
 
     loadConfiguration() {
+        const aiStudioAppUrl = parseAiStudioAppUrl(process.env.AI_STUDIO_APP_URL);
+        if (!aiStudioAppUrl) {
+            throw new Error(
+                "[Config] AI_STUDIO_APP_URL is required and must be your own app URL: https://ai.studio/apps/<app-id>. " +
+                    "No default app is provided. Setup guides / 配置教程: " +
+                    "docs/zh/create-ai-studio-app.md (中文), docs/en/create-ai-studio-app.md (English)."
+            );
+        }
+
         const config = {
-            aiStudioAppUrl: DEFAULT_AI_STUDIO_APP_URL,
+            aiStudioAppUrl,
             apiKeys: [],
             apiKeySource: "Not set",
             browserExecutablePath: null,
@@ -74,17 +81,6 @@ class ConfigLoader {
         };
 
         // Environment variable overrides
-        if (process.env.AI_STUDIO_APP_URL) {
-            const aiStudioAppUrl = parseAiStudioAppUrl(process.env.AI_STUDIO_APP_URL);
-            if (aiStudioAppUrl) {
-                config.aiStudioAppUrl = aiStudioAppUrl;
-            } else {
-                this.logger.warn(
-                    `[Config] Invalid AI_STUDIO_APP_URL "${process.env.AI_STUDIO_APP_URL}". ` +
-                        `Expected https://ai.studio/apps/<app-id>; using the default app.`
-                );
-            }
-        }
         if (process.env.PORT) {
             const parsed = parseInt(process.env.PORT, 10);
             config.httpPort = Number.isFinite(parsed) ? parsed : config.httpPort;

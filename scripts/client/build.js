@@ -261,17 +261,21 @@ class RequestProcessor {
             try {
                 Logger.debug(`Executing request:`, requestSpec.method, requestSpec.path);
 
-                const requestUrl = this._constructUrl(requestSpec);
+                const upstreamUrl = new URL(this._constructUrl(requestSpec));
+                // AI Studio provides GEMINI_API_KEY only in the server environment.
+                const requestUrl =
+                    upstreamUrl.origin === "https://generativelanguage.googleapis.com"
+                        ? `/api/gemini${upstreamUrl.pathname}${upstreamUrl.search}`
+                        : upstreamUrl.href;
                 const requestConfig = this._buildRequestConfig(requestSpec, abortController.signal);
 
                 const response = await fetch(requestUrl, requestConfig);
+                const upstreamStatus = Number(response.headers.get("x-aistudio-upstream-status")) || response.status;
 
-                if (!response.ok) {
+                if (!response.ok || upstreamStatus >= 400) {
                     const errorBody = await response.text();
-                    const error = new Error(
-                        `Google API returned error: ${response.status} ${response.statusText} ${errorBody}`
-                    );
-                    error.status = response.status;
+                    const error = new Error(`Google API returned error: ${upstreamStatus} ${errorBody}`);
+                    error.status = upstreamStatus;
                     throw error;
                 }
                 // Clear timeout when fetch succeeds to prevent timer leak
@@ -902,6 +906,14 @@ class ProxySystem extends EventTarget {
         const headerMap = {};
         response.headers.forEach((v, k) => {
             const lowerKey = k.toLowerCase();
+            // Fetch has decoded the body; the adapter sends it over a new HTTP connection.
+            if (
+                ["content-encoding", "content-length", "transfer-encoding", "x-aistudio-upstream-status"].includes(
+                    lowerKey
+                )
+            ) {
+                return;
+            }
             if (lowerKey === "x-goog-upload-url" && v.includes("googleapis.com")) {
                 try {
                     const urlObj = new URL(v);

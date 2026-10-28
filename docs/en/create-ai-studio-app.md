@@ -2,6 +2,8 @@
 
 This guide creates a dedicated AI Studio App for the project and obtains the app link required by the `AI_STUDIO_APP_URL` environment variable.
 
+The project provides no default App. You must configure an App you created.
+
 ## 1. Open the blank app
 
 Sign in to your Google account, then open the [AI Studio blank app](https://aistudio.google.com/apps/bundled/blank).
@@ -22,14 +24,22 @@ Wait for the copy to be created. After your app name appears at the top, click *
 
 ## 3. Replace the app files
 
-Replace the complete contents of these files in the code editor:
+Replace each App file with the complete contents of the corresponding repository file. Create any missing files:
 
-1. Open `index.ts` in the AI Studio App, delete its existing contents, then copy and paste the complete contents of this project's [`scripts/client/build.js`](../../scripts/client/build.js).
-2. Open `index.html` in the AI Studio App, delete its existing contents, then copy and paste the complete contents of this project's [`scripts/client/index.html`](../../scripts/client/index.html).
+| Repository file                                                        | App file         |
+| ---------------------------------------------------------------------- | ---------------- |
+| [`scripts/client/build.js`](../../scripts/client/build.js)             | `index.ts`       |
+| [`scripts/client/index.html`](../../scripts/client/index.html)         | `index.html`     |
+| [`scripts/client/server.mjs`](../../scripts/client/server.mjs)         | `server.mjs`     |
+| [`scripts/client/package.json`](../../scripts/client/package.json)     | `package.json`   |
+| [`scripts/client/metadata.json`](../../scripts/client/metadata.json)   | `metadata.json`  |
+| [`scripts/client/vite.config.ts`](../../scripts/client/vite.config.ts) | `vite.config.ts` |
+
+Remove any old `vite.config.js` or `vite.config.mjs` so that only the `vite.config.ts` above remains. The startup commands in `package.json` must run `server.mjs`; retain the server-side Gemini capability declaration in `metadata.json` as well.
 
 Click **Save** at the bottom of the editor when finished. You can also press `Ctrl+S` (`Command+S` on macOS).
 
-> Copy the files from the version of the repository you are currently using. If a future project update changes either file, replace the corresponding App file again and save it.
+> Copy the files from the version of the repository you are currently using. If a future project update changes any of these files, replace the corresponding App file again and save it.
 
 ## 4. Check the preview
 
@@ -66,5 +76,7 @@ AI_STUDIO_APP_URL=https://ai.studio/apps/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 Save `.env` and restart AIStudioToAPI. The `AI Studio App URL` entry in the startup log should show the URL you configured.
+
+If this setting is empty or invalid, startup stops without falling back to another App.
 
 > The App must remain Public, or the Google account running AIStudioToAPI may be unable to open it. A public link also allows anyone who has it to view the App, so never add API keys, cookies, or other secrets to `index.ts` or `index.html`.
