@@ -32,3 +32,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Obfuscated AI Studio client files
+scripts/client/build.js
+scripts/client/server.mjs
