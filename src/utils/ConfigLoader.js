@@ -16,9 +16,10 @@ function parseAiStudioAppUrl(value) {
     try {
         const url = new URL(rawValue);
         const pathSegments = url.pathname.split("/").filter(Boolean);
+        const isValidHost = url.hostname === "ai.studio" || url.hostname === "aistudio.google.com";
         if (
             url.protocol !== "https:" ||
-            url.hostname !== "ai.studio" ||
+            !isValidHost ||
             url.username ||
             url.password ||
             url.search ||
@@ -34,6 +35,29 @@ function parseAiStudioAppUrl(value) {
     }
 }
 
+function parseAiStudioAppUrls(value) {
+    const rawValue = String(value || "").trim();
+    if (!rawValue) return [];
+
+    const candidates = rawValue
+        .split(/[,;\n]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+
+    const validUrls = [];
+    for (const item of candidates) {
+        const parsed = parseAiStudioAppUrl(item);
+        if (!parsed) {
+            return [];
+        }
+        if (!validUrls.includes(parsed)) {
+            validUrls.push(parsed);
+        }
+    }
+
+    return validUrls;
+}
+
 /**
  * Configuration Loader Module
  * Responsible for loading system configuration from environment variables
@@ -44,17 +68,19 @@ class ConfigLoader {
     }
 
     loadConfiguration() {
-        const aiStudioAppUrl = parseAiStudioAppUrl(process.env.AI_STUDIO_APP_URL);
-        if (!aiStudioAppUrl) {
+        const aiStudioAppUrls = parseAiStudioAppUrls(process.env.AI_STUDIO_APP_URL);
+        if (aiStudioAppUrls.length === 0) {
             throw new Error(
                 "[Config] AI_STUDIO_APP_URL is required and must be your own app URL: https://ai.studio/apps/<app-id>. " +
                     "No default app is provided. Setup guides / 配置教程: " +
                     "docs/zh/create-ai-studio-app.md (中文), docs/en/create-ai-studio-app.md (English)."
             );
         }
+        const aiStudioAppUrl = aiStudioAppUrls[0];
 
         const config = {
             aiStudioAppUrl,
+            aiStudioAppUrls,
             apiKeys: [],
             apiKeySource: "Not set",
             browserExecutablePath: null,
@@ -126,6 +152,9 @@ class ConfigLoader {
         if (process.env.MAX_CONTEXTS) {
             const parsed = parseInt(process.env.MAX_CONTEXTS, 10);
             config.maxContexts = Number.isFinite(parsed) ? Math.max(0, parsed) : config.maxContexts;
+        } else if (config.aiStudioAppUrls.length > 1) {
+            // Default to 2 active sessions when multiple app URLs are provided
+            config.maxContexts = Math.min(2, config.aiStudioAppUrls.length);
         }
         if (process.env.CAMOUFOX_EXECUTABLE_PATH) config.browserExecutablePath = process.env.CAMOUFOX_EXECUTABLE_PATH;
         if (process.env.API_KEYS) {
@@ -232,7 +261,14 @@ class ConfigLoader {
         this.logger.info("================ [ Active Configuration ] ================");
         this.logger.info(`  HTTP Server Port: ${config.httpPort}`);
         this.logger.info(`  Listening Address: ${config.host}`);
-        this.logger.info(`  AI Studio App URL: ${config.aiStudioAppUrl}`);
+        if (config.aiStudioAppUrls.length > 1) {
+            this.logger.info(`  AI Studio App URLs (${config.aiStudioAppUrls.length} slots configured):`);
+            config.aiStudioAppUrls.forEach((url, i) => {
+                this.logger.info(`    [Slot #${i}] ${url}`);
+            });
+        } else {
+            this.logger.info(`  AI Studio App URL: ${config.aiStudioAppUrl}`);
+        }
         this.logger.info(`  Streaming Mode: ${config.streamingMode}`);
         this.logger.info(`  Stream Timeout: ${config.streamTimeoutMs}ms`);
         this.logger.info(`  Fake/Non-Stream Timeout: ${config.fakeStreamTimeoutMs}ms`);

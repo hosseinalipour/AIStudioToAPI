@@ -36,7 +36,7 @@ class ProxyServerSystem extends EventEmitter {
         const configLoader = new ConfigLoader(this.logger);
         this.config = configLoader.loadConfiguration();
 
-        this.authSource = new AuthSource(this.logger);
+        this.authSource = new AuthSource(this.logger, this.config);
         this.browserManager = new BrowserManager(this.logger, this.config, this.authSource);
         this.usageStatsService = new UsageStatsService(
             this.authSource,

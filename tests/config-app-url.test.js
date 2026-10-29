@@ -48,3 +48,24 @@ test("normalizes whitespace and trailing slash on the configured app", () => {
         "https://ai.studio/apps/my-own-app"
     );
 });
+
+test("supports multiple comma-separated app URLs and normalizes hostnames", () => {
+    const config = loadWithAppUrl(
+        "https://ai.studio/apps/app-1, https://aistudio.google.com/apps/app-2/, https://ai.studio/apps/app-3"
+    );
+    assert.deepEqual(config.aiStudioAppUrls, [
+        "https://ai.studio/apps/app-1",
+        "https://ai.studio/apps/app-2",
+        "https://ai.studio/apps/app-3",
+    ]);
+    assert.equal(config.aiStudioAppUrl, "https://ai.studio/apps/app-1");
+    assert.equal(config.maxContexts, 2);
+});
+
+test("supports newline/semicolon separated URLs and deduplicates identical ones", () => {
+    const config = loadWithAppUrl(
+        "https://ai.studio/apps/app-1;\nhttps://ai.studio/apps/app-2\nhttps://ai.studio/apps/app-1"
+    );
+    assert.deepEqual(config.aiStudioAppUrls, ["https://ai.studio/apps/app-1", "https://ai.studio/apps/app-2"]);
+    assert.equal(config.maxContexts, 2);
+});

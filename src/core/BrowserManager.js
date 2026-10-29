@@ -812,15 +812,35 @@ class BrowserManager {
     }
 
     /**
+     * Helper: Resolve the target AI Studio app URL for a specific authIndex
+     * @param {number|null} [authIndex=null] - Auth index to resolve URL for
+     * @returns {string} Target app URL
+     */
+    getTargetUrlForAuth(authIndex = null) {
+        if (
+            authIndex !== null &&
+            Number.isInteger(authIndex) &&
+            Array.isArray(this.config?.aiStudioAppUrls) &&
+            this.config.aiStudioAppUrls.length > 0
+        ) {
+            const urlIndex = authIndex % this.config.aiStudioAppUrls.length;
+            return this.config.aiStudioAppUrls[urlIndex];
+        }
+        return this.targetUrl;
+    }
+
+    /**
      * Helper: Navigate to target page and wake up the page
      * Contains the common navigation and page activation logic
      * @param {Page} page - The page object to navigate
      * @param {string} logPrefix - Log prefix for messages (e.g., "[Browser]" or "[Reconnect]")
+     * @param {number|null} [authIndex=null] - Optional auth index to select target URL
      */
-    async _navigateAndWakeUpPage(page, logPrefix = "[Browser]") {
-        this.logger.debug(`${logPrefix} Navigating to target page...`);
+    async _navigateAndWakeUpPage(page, logPrefix = "[Browser]", authIndex = null) {
+        const targetUrl = this.getTargetUrlForAuth(authIndex);
+        this.logger.debug(`${logPrefix} Navigating to target page: ${targetUrl}...`);
 
-        await page.goto(this.targetUrl, {
+        await page.goto(targetUrl, {
             timeout: 180000,
             waitUntil: "domcontentloaded",
         });
@@ -2152,7 +2172,7 @@ class BrowserManager {
             // Check abort status before navigation (most time-consuming part)
             this._throwIfContextInitAborted(authIndex, isBackgroundTask);
 
-            await this._navigateAndWakeUpPage(page, `[Context#${authIndex}]`);
+            await this._navigateAndWakeUpPage(page, `[Context#${authIndex}]`, authIndex);
 
             // Check abort status after navigation
             this._throwIfContextInitAborted(authIndex, isBackgroundTask);
@@ -2495,7 +2515,7 @@ class BrowserManager {
             this.logger.info("[Reconnect] Reset WebSocket initialization state");
 
             // Navigate to target page and wake it up
-            await this._navigateAndWakeUpPage(page, "[Reconnect]");
+            await this._navigateAndWakeUpPage(page, "[Reconnect]", targetAuthIndex);
 
             // Check for cookie expiration, region restrictions, and other errors
             await this._checkPageStatusAndErrors(page, "[Reconnect]", targetAuthIndex);

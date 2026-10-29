@@ -14,8 +14,9 @@ const path = require("path");
  * Responsible for loading and managing authentication information from the file system
  */
 class AuthSource {
-    constructor(logger) {
+    constructor(logger, config = null) {
         this.logger = logger;
+        this.config = config;
         this.authMode = "file";
         this.availableIndices = [];
         // Indices used for rotation/switching (deduplicated by email, keeping the latest index per account)
@@ -86,20 +87,22 @@ class AuthSource {
     _discoverAvailableIndices() {
         let indices = [];
         const configDir = path.join(process.cwd(), "configs", "auth");
-        if (!fs.existsSync(configDir)) {
-            this.availableIndices = [];
-            this.initialIndices = [];
-            return;
+        if (fs.existsSync(configDir)) {
+            try {
+                const files = fs.readdirSync(configDir);
+                const authFiles = files.filter(file => /^auth-\d+\.json$/.test(file));
+                indices = authFiles.map(file => parseInt(file.match(/^auth-(\d+)\.json$/)[1], 10));
+            } catch (error) {
+                this.logger.error(`[Auth] Failed to scan "configs/auth/" directory: ${error.message}`);
+            }
         }
-        try {
-            const files = fs.readdirSync(configDir);
-            const authFiles = files.filter(file => /^auth-\d+\.json$/.test(file));
-            indices = authFiles.map(file => parseInt(file.match(/^auth-(\d+)\.json$/)[1], 10));
-        } catch (error) {
-            this.logger.error(`[Auth] Failed to scan "configs/auth/" directory: ${error.message}`);
-            this.availableIndices = [];
-            this.initialIndices = [];
-            return;
+
+        // If multiple AI Studio App URLs are configured and at least one auth source exists,
+        // create virtual account slots for each App URL
+        const appUrls = Array.isArray(this.config?.aiStudioAppUrls) ? this.config.aiStudioAppUrls : [];
+        if (appUrls.length > 1 && indices.length > 0) {
+            const urlSlotIndices = appUrls.map((_, idx) => idx);
+            indices = [...new Set([...indices, ...urlSlotIndices])];
         }
 
         this.initialIndices = [...new Set(indices)].sort((a, b) => a - b);
@@ -124,6 +127,8 @@ class AuthSource {
         this.duplicateGroups = [];
         this.expiredIndices = [];
 
+        const appUrls = Array.isArray(this.config?.aiStudioAppUrls) ? this.config.aiStudioAppUrls : [];
+
         for (const index of this.initialIndices) {
             // Iterate over initial to check all, not just previously available
             const authContent = this._getAuthContent(index);
@@ -131,8 +136,14 @@ class AuthSource {
                 try {
                     const authData = JSON.parse(authContent);
                     validIndices.push(index);
-                    this.accountNameMap.set(index, authData.accountName || null);
-                    // Track expired status from auth file
+                    let accountName = authData.accountName || null;
+                    if (appUrls.length > 1 && appUrls[index]) {
+                        const pathParts = appUrls[index].split("/").filter(Boolean);
+                        const appId = pathParts[pathParts.length - 1];
+                        accountName = `Slot #${index} (${appId})`;
+                    }
+                    this.accountNameMap.set(index, accountName);
+                    // Track expired status from auth file or memory
                     if (authData.expired === true) {
                         this.expiredIndices.push(index);
                     }
@@ -236,7 +247,22 @@ class AuthSource {
     }
 
     _getAuthContent(index) {
-        const authFilePath = path.join(process.cwd(), "configs", "auth", `auth-${index}.json`);
+        let authFilePath = path.join(process.cwd(), "configs", "auth", `auth-${index}.json`);
+        if (!fs.existsSync(authFilePath)) {
+            // Virtual account slot: fallback to the first available auth file (e.g. auth-0.json)
+            const configDir = path.join(process.cwd(), "configs", "auth");
+            if (fs.existsSync(configDir)) {
+                try {
+                    const files = fs.readdirSync(configDir);
+                    const authFiles = files.filter(file => /^auth-\d+\.json$/.test(file));
+                    if (authFiles.length > 0) {
+                        authFilePath = path.join(configDir, authFiles[0]);
+                    }
+                } catch {
+                    // Ignore directory read error
+                }
+            }
+        }
         if (!fs.existsSync(authFilePath)) return null;
         try {
             return fs.readFileSync(authFilePath, "utf-8");
@@ -303,6 +329,14 @@ class AuthSource {
         }
 
         const authFilePath = path.join(process.cwd(), "configs", "auth", `auth-${index}.json`);
+        if (!fs.existsSync(authFilePath)) {
+            // Virtual slot without dedicated file
+            this.expiredIndices.push(index);
+            this._buildRotationIndices();
+            this.logger.warn(`[Auth] ⏰ Marked virtual auth slot #${index} as expired`);
+            return true;
+        }
+
         try {
             const fileContent = await fsPromises.readFile(authFilePath, "utf-8");
             const authData = JSON.parse(fileContent);
@@ -347,6 +381,12 @@ class AuthSource {
         }
 
         const authFilePath = path.join(process.cwd(), "configs", "auth", `auth-${index}.json`);
+        if (!fs.existsSync(authFilePath)) {
+            // Virtual slot without dedicated file
+            this.expiredIndices = this.expiredIndices.filter(idx => idx !== index);
+            this._buildRotationIndices();
+            return true;
+        }
         try {
             const fileContent = await fsPromises.readFile(authFilePath, "utf-8");
             const authData = JSON.parse(fileContent);
